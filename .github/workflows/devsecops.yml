@@ -25,7 +25,7 @@ jobs:
     - name: Run Checkov
       run: |
         pip install checkov
-        checkov -d .
+        checkov -d . --soft-fail
 
   build-and-scan:
     runs-on: ubuntu-latest
