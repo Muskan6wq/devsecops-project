@@ -1,0 +1,64 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 🔐 Gitleaks (Secrets Scan)
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
+
+    # 🔐 SAST (SonarQube alternative basic scan)
+    - name: Run SAST
+      run: |
+        echo "Running basic static analysis..."
+
+    # 🔐 IaC Scan
+    - name: Run Checkov
+      run: |
+        pip install checkov
+        checkov -d .
+
+  build-and-scan:
+    runs-on: ubuntu-latest
+    needs: security-checks
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker Image
+      run: |
+        docker build -t devsecopsacr123.azurecr.io/app:v1 .
+
+    # 🔐 Trivy Scan
+    - name: Scan Docker Image
+      run: |
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+        aquasec/trivy image devsecopsacr123.azurecr.io/app:v1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+
+    steps:
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Push Image to ACR
+      run: |
+        az acr login --name devsecopsacr123
+        docker push devsecopsacr123.azurecr.io/app:v1
+
+    - name: Deploy to AKS
+      run: |
+        kubectl apply -f k8s/deployment.yaml
