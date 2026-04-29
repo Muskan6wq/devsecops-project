@@ -5,8 +5,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  security-checks:
-    runs-on: ubuntu-latest
+   security-checks:
+     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Code
