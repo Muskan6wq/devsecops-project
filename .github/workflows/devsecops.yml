@@ -26,6 +26,11 @@ jobs:
       run: |
         pip install checkov
         checkov -d . --soft-fail
+    
+    - name: SonarQube Scan
+   uses: SonarSource/sonarqube-scan-action@v2
+   env:
+     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build-and-scan:
     runs-on: ubuntu-latest
